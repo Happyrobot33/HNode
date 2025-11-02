@@ -1,0 +1,41 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2013/05/nuspec.xsd">
+  <metadata>
+    <id>SharpCompress</id>
+    <version>0.41.0</version>
+    <authors>Adam Hathcock</authors>
+    <license type="expression">MIT</license>
+    <licenseUrl>https://licenses.nuget.org/MIT</licenseUrl>
+    <readme>README.md</readme>
+    <projectUrl>https://github.com/adamhathcock/sharpcompress</projectUrl>
+    <description>SharpCompress is a compression library for NET Standard 2.0/NET 4.8/NET 4.8.1/NET 6.0/NET 8.0 that can unrar, decompress 7zip, decompress xz, zip/unzip, tar/untar lzip/unlzip, bzip2/unbzip2 and gzip/ungzip with forward-only reading and file random access APIs. Write support for zip/tar/bzip2/gzip is implemented.</description>
+    <copyright>Copyright (c) 2025  Adam Hathcock</copyright>
+    <tags>rar unrar zip unzip bzip2 gzip tar 7zip lzip xz</tags>
+    <repository type="git" url="https://github.com/adamhathcock/sharpcompress" commit="3fa7e854d3c6740bbd3cfa6e910281b871abfc2e" />
+    <dependencies>
+      <group targetFramework=".NETFramework4.8">
+        <dependency id="System.Buffers" version="4.6.0" exclude="Build,Analyzers" />
+        <dependency id="ZstdSharp.Port" version="0.8.6" exclude="Build,Analyzers" />
+      </group>
+      <group targetFramework=".NETFramework4.8.1">
+        <dependency id="System.Buffers" version="4.6.0" exclude="Build,Analyzers" />
+        <dependency id="ZstdSharp.Port" version="0.8.6" exclude="Build,Analyzers" />
+      </group>
+      <group targetFramework="net6.0">
+        <dependency id="System.Buffers" version="4.6.0" exclude="Build,Analyzers" />
+        <dependency id="ZstdSharp.Port" version="0.8.6" exclude="Build,Analyzers" />
+      </group>
+      <group targetFramework="net8.0">
+        <dependency id="System.Buffers" version="4.6.0" exclude="Build,Analyzers" />
+        <dependency id="ZstdSharp.Port" version="0.8.6" exclude="Build,Analyzers" />
+      </group>
+      <group targetFramework=".NETStandard2.0">
+        <dependency id="Microsoft.Bcl.AsyncInterfaces" version="8.0.0" exclude="Build,Analyzers" />
+        <dependency id="System.Buffers" version="4.6.0" exclude="Build,Analyzers" />
+        <dependency id="System.Memory" version="4.6.0" exclude="Build,Analyzers" />
+        <dependency id="System.Text.Encoding.CodePages" version="8.0.0" exclude="Build,Analyzers" />
+        <dependency id="ZstdSharp.Port" version="0.8.6" exclude="Build,Analyzers" />
+      </group>
+    </dependencies>
+  </metadata>
+</package>

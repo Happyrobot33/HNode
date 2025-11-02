@@ -66,6 +66,16 @@ namespace Generators.MAVLinkDrone
 
         public void GenerateDMX(ref List<byte> dmxData)
         {
+            //lists for all data
+            List<byte> XCoarse = new List<byte>();
+            List<byte> XFine = new List<byte>();
+            List<byte> YCoarse = new List<byte>();
+            List<byte> YFine = new List<byte>();
+            List<byte> ZCoarse = new List<byte>();
+            List<byte> ZFine = new List<byte>();
+            List<byte> LEDR = new List<byte>();
+            List<byte> LEDG = new List<byte>();
+            List<byte> LEDB = new List<byte>();
             foreach (Drone d in drones.Values)
             {
                 //make their X move cleanly based on the time
@@ -127,9 +137,34 @@ namespace Generators.MAVLinkDrone
                     droneValues.Add(color.b);
                 }
 
+                //add to the individual lists
+                XCoarse.Add(x.coarse);
+                XFine.Add(x.fine);
+                YCoarse.Add(y.coarse);
+                YFine.Add(y.fine);
+                ZCoarse.Add(z.coarse);
+                ZFine.Add(z.fine);
+                LEDR.Add(d.GetDroneColor().r);
+                LEDG.Add(d.GetDroneColor().g);
+                LEDB.Add(d.GetDroneColor().b);
+
                 //set the data
-                dmxData.SetRange(channelStart + ((d.uid - 1) * droneValues.Count), droneValues.Count, droneValues.ToArray());
+                //dmxData.SetRange(channelStart + ((d.uid - 1) * droneValues.Count), droneValues.Count, droneValues.ToArray());
             }
+            //merge together
+            List<byte> alldata = new List<byte>();
+            alldata.AddRange(XCoarse);
+            alldata.AddRange(XFine);
+            alldata.AddRange(YCoarse);
+            alldata.AddRange(YFine);
+            alldata.AddRange(ZCoarse);
+            alldata.AddRange(ZFine);
+            alldata.AddRange(LEDR);
+            alldata.AddRange(LEDG);
+            alldata.AddRange(LEDB);
+
+            //set the data
+            dmxData.SetRange(channelStart, alldata.Count, alldata.ToArray());
             //Debug.Log(dmxData.Count);
             return;
         }
