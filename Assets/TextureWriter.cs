@@ -22,6 +22,7 @@ public class TextureWriter : MonoBehaviour
     private System.Diagnostics.Stopwatch timer = new System.Diagnostics.Stopwatch();
     public TextMeshProUGUI frameTime;
     public Material mat;
+    public Material previewMat;
     private Color32[] pixels;
 
     void Start()
@@ -39,6 +40,7 @@ public class TextureWriter : MonoBehaviour
 
         spoutSender.sourceTexture = texture;
         mat.mainTexture = texture;
+        previewMat.mainTexture = texture;
 
         pixels = new Color32[TextureWidth * TextureHeight];
     }
