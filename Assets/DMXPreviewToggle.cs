@@ -3,6 +3,7 @@ using UnityEngine.InputSystem;
 
 public class DMXPreviewToggle : MonoBehaviour
 {
+    public InputAction fullscreenAction;
     public MeshRenderer previewMesh;
     public Canvas mainUI;
     public Canvas graphyUI;
@@ -27,9 +28,23 @@ public class DMXPreviewToggle : MonoBehaviour
             graphyUI.enabled = !_dmxPreview;
     }
 
-    void Update()
+    public void ToggleDMXPreview(InputAction.CallbackContext ctx)
     {
-        if (Keyboard.current[Key.F11].wasPressedThisFrame)
-            EnableDMXPreview(!_dmxPreview);
+        EnableDMXPreview(!_dmxPreview);
+    }
+
+    void Awake()
+    {
+        fullscreenAction.performed += ToggleDMXPreview;
+    }
+
+    void OnEnable()
+    {
+        fullscreenAction.Enable();
+    }
+
+    void OnDisable()
+    {
+        fullscreenAction.Disable();
     }
 }

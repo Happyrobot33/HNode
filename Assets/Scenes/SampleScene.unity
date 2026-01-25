@@ -5443,6 +5443,23 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c0d113e0a50c51a3498763718d38a89f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DMXPreviewToggle
+  fullscreenAction:
+    m_Name: Fullscreen
+    m_Type: 0
+    m_ExpectedControlType: 
+    m_Id: 63f54873-360c-45cc-b539-e3430efdacde
+    m_Processors: 
+    m_Interactions: 
+    m_SingletonActionBindings:
+    - m_Name: 
+      m_Id: e268dcb5-580a-4305-be3f-a720a6d180f6
+      m_Path: <Keyboard>/f11
+      m_Interactions: Press
+      m_Processors: 
+      m_Groups: 
+      m_Action: Fullscreen
+      m_Flags: 0
+    m_Flags: 0
   previewMesh: {fileID: 1374878797}
   mainUI: {fileID: 656802125}
   graphyUI: {fileID: 966395751}
