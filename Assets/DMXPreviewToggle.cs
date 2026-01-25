@@ -16,6 +16,11 @@ public class DMXPreviewToggle : MonoBehaviour
     private int _windowResolutionWidth;
     private int _windowResolutionHeight;
 
+    public void SetPreviewChromaColor(Color color)
+    {
+        previewMesh.material.SetColor("_ChromaKeyColor", color);
+    }
+
     public void EnableDMXPreview(bool enablePreview)
     {
         if (enablePreview == _dmxPreview)

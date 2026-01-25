@@ -40,6 +40,8 @@ public class ShowConfiguration
     public SerializableIPAddress ArtNetAddress { get; set; } = IPAddress.Any;
     public int TargetFramerate { get; set; } = 60;
 
+    public Color32 PreviewChromaColor { get; set; } = new Color32(0, 255, 0, 0);
+
     //initializer
     public ShowConfiguration()
     {
