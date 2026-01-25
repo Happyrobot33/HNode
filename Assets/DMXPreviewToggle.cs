@@ -13,6 +13,8 @@ public class DMXPreviewToggle : MonoBehaviour
     }
 
     private bool _dmxPreview;
+    private int _windowResolutionWidth;
+    private int _windowResolutionHeight;
 
     public void EnableDMXPreview(bool enablePreview)
     {
@@ -31,6 +33,14 @@ public class DMXPreviewToggle : MonoBehaviour
     public void ToggleDMXPreview(InputAction.CallbackContext ctx)
     {
         EnableDMXPreview(!_dmxPreview);
+
+        if (_dmxPreview)
+        {
+            _windowResolutionWidth = Screen.width;
+            _windowResolutionHeight = Screen.height;
+
+            Screen.SetResolution(Screen.mainWindowDisplayInfo.width, Screen.mainWindowDisplayInfo.height, _dmxPreview);
+        } else Screen.SetResolution(_windowResolutionWidth, _windowResolutionHeight, _dmxPreview);
     }
 
     void Awake()
