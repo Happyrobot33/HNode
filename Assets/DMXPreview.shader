@@ -2,6 +2,7 @@ Shader "Custom/DMXPreview"
 {
     Properties
     {
+        _ChromaKeyColor("Chroma Key Color", Color) = (0.0, 0.0, 0.0, 0.0)
         [MainTexture] _BaseMap("DMX Texture", 2D) = "Black"
     }
 
@@ -33,6 +34,7 @@ Shader "Custom/DMXPreview"
             TEXTURE2D(_BaseMap);
 
             CBUFFER_START(UnityPerMaterial)
+                half4 _ChromaKeyColor;
                 float4 _BaseMap_TexelSize;
             CBUFFER_END
 
@@ -59,7 +61,9 @@ Shader "Custom/DMXPreview"
 
                 pixel.y += (_BaseMap_TexelSize.w - _ScreenParams.y);
 
-                return _BaseMap[pixel];
+                float4 color = _BaseMap[pixel];
+
+                return lerp(_ChromaKeyColor, color, color.a);
             }
             ENDHLSL
         }
