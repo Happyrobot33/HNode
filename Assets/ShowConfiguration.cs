@@ -39,7 +39,7 @@ public class ShowConfiguration
     [YamlMember(Description = "The address to listen to for artnet information. Set this to 0.0.0.0 to automatically find artnet information across all network interfaces")]
     public SerializableIPAddress ArtNetAddress { get; set; } = IPAddress.Any;
     public int TargetFramerate { get; set; } = 60;
-
+    [YamlMember(Description = "The background Chroma Key color to use on the F11 Preview pane, RGBA (0 - 255) Integer")]
     public Color32 PreviewChromaColor { get; set; } = new Color32(0, 255, 0, 0);
 
     //initializer
