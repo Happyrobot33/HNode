@@ -2,6 +2,8 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
+using System.Text.RegularExpressions;
 using ArtNet;
 using Klak.Spout;
 using SFB;
@@ -31,8 +33,13 @@ public class Loader : MonoBehaviour
     ISerializer ymlserializer;
     public UIController uiController;
 
+    private const string CONFIG_REGEX = "-{1,2}[Cc]onfig-";
+    private const string CONFIG_FILE_REGEX = "-{1,2}[Cc]onfig-[Ff]ile=";
+
     void Start()
     {
+        ReadCLIConfig(ref showconf);
+
         spoutReceiver = FindObjectOfType<SpoutReceiver>();
         spoutSender = FindObjectOfType<SpoutSender>();
         artNetReceiver = FindObjectOfType<ArtNetReceiver>();
@@ -72,6 +79,8 @@ public class Loader : MonoBehaviour
         ymldeserializer = SetupBuilder<DeserializerBuilder>().Build();
 
         SetupDynamicUI();
+
+        ReadCLIConfigFile();
     }
 
     void Update()
@@ -172,12 +181,23 @@ public class Loader : MonoBehaviour
             return;
         }
 
-        //read from the first path
-        var content = System.IO.File.ReadAllText(paths[0]);
+        LoadShowConfigurationFile(paths[0]);
+    }
+
+    public void LoadShowConfigurationFile(string path, bool forceFlags = false)
+    {
+        if (!System.IO.File.Exists(path))
+        {
+            Debug.LogError("File not found");
+            return;
+        }
+        
+        //read from the path
+        var content = System.IO.File.ReadAllText(path);
 
         if (string.IsNullOrEmpty(content))
         {
-            Debug.LogError("File is empty or not found.");
+            Debug.LogError("File is empty.");
             return;
         }
 
@@ -188,9 +208,62 @@ public class Loader : MonoBehaviour
         //invalidate the dropdowns and toggles
         uiController.InvalidateUIState();
 
+        Action preCallback = null;
+
+        if (forceFlags)
+            preCallback = () => ReadCLIConfig(ref showconf);
+
         //start coroutine
         //this is stupid dumb shit but this YML library is being weird and this fixes the issue
-        StartCoroutine(DeferredLoad(content));
+        StartCoroutine(DeferredLoad(content, preCallback));
+    }
+
+    public void ReadCLIConfigFile()
+    {
+        Regex cliConfigFileRegex = new Regex(CONFIG_FILE_REGEX);
+        string configFilePath = Environment.GetCommandLineArgs()
+            .FirstOrDefault((argument) => cliConfigFileRegex.IsMatch(argument));
+        
+        if (configFilePath != null)
+        {
+            Debug.Log($"Config file path is: {cliConfigFileRegex.Replace(configFilePath, "")}");
+            LoadShowConfigurationFile(cliConfigFileRegex.Replace(configFilePath, ""), true);
+        }
+    }
+
+    public void ReadCLIConfig(ref ShowConfiguration showconf)
+    {
+        Regex cliConfigRegex = new Regex(CONFIG_REGEX);
+        string[] launchArgs = Array.FindAll(Environment.GetCommandLineArgs(), cliConfigRegex.IsMatch);
+
+        foreach (string argument in launchArgs)
+        {
+            string[] configOption = cliConfigRegex.Replace(argument, "").Split("=");
+
+            if (configOption.Length != 2)
+                continue;
+
+            if (configOption[0].ToLower() == "file")
+                continue;
+
+            PropertyInfo[] availableConfigOptions = showconf.GetType().GetProperties();
+            PropertyInfo selectedConfigOption = availableConfigOptions.FirstOrDefault((availableOption) => availableOption.Name.ToLower() == configOption[0].ToLower());
+
+            if (selectedConfigOption == null)
+            {
+                Debug.LogWarning($"Unkown configuration option: {configOption[0]}");
+                continue;
+            }
+
+            try
+            {
+                selectedConfigOption.SetValue(showconf, Convert.ChangeType(configOption[1], selectedConfigOption.PropertyType));
+                Debug.Log($"Has configuration override flag: \"{selectedConfigOption.Name}\" as type \"{selectedConfigOption.PropertyType}\" set to ({configOption[1]})");
+            } catch (Exception e)
+            {
+                Debug.LogError($"Cannot parse flag \"{argument}\" as type \"{selectedConfigOption.PropertyType}\"");
+            }
+        }
     }
 
     public static void UnloadShowConf()
@@ -212,7 +285,7 @@ public class Loader : MonoBehaviour
         showconf.Deserializer.Deconstruct();
     }
 
-    IEnumerator DeferredLoad(string content)
+    IEnumerator DeferredLoad(string content, Action preCallback = null)
     {
         //returning 0 will make it wait 1 frame
         yield return new WaitForEndOfFrame();
@@ -220,7 +293,7 @@ public class Loader : MonoBehaviour
         //yayyyyy double load to fix dumb race condition bullshit
         showconf = ymldeserializer.Deserialize<ShowConfiguration>(content);
 
-        LoadShowConf();
+        LoadShowConf(preCallback);
     }
 
     public static void ReloadShowConf()
@@ -229,8 +302,11 @@ public class Loader : MonoBehaviour
         LoadShowConf();
     }
 
-    public static void LoadShowConf()
+    public static void LoadShowConf(Action preCallback = null)
     {
+        if (preCallback != null)
+            preCallback();
+        
         //run initialization on all generators
         foreach (var generator in showconf.Generators)
         {
@@ -315,7 +391,7 @@ public class Loader : MonoBehaviour
     private static void SetFramerate(int targetFramerate)
     {
         //check bounds
-        if (targetFramerate < 1 || targetFramerate > 60)
+        if (targetFramerate < 1 || targetFramerate > 144)
         {
             Debug.LogWarning($"Target framerate {targetFramerate} is out of bounds. Setting to default 60.");
             targetFramerate = 60;
