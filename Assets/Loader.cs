@@ -24,6 +24,7 @@ public class Loader : MonoBehaviour
     public static SpoutReceiver spoutReceiver;
     public static SpoutSender spoutSender;
     public static ArtNetReceiver artNetReceiver;
+    public static DMXPreviewToggle previewToggle;
 
     public static ShowConfiguration showconf = new ShowConfiguration();
 
@@ -36,6 +37,7 @@ public class Loader : MonoBehaviour
         spoutReceiver = FindObjectOfType<SpoutReceiver>();
         spoutSender = FindObjectOfType<SpoutSender>();
         artNetReceiver = FindObjectOfType<ArtNetReceiver>();
+        previewToggle = FindAnyObjectByType<DMXPreviewToggle>();
 
         //load in all the serializers
         serializers = GetAllInterfaceImplementations<IDMXSerializer>();
@@ -253,6 +255,8 @@ public class Loader : MonoBehaviour
         artNetReceiver.ChangeIPAddress(showconf.ArtNetAddress);
 
         SetFramerate(showconf.TargetFramerate);
+
+        previewToggle.SetPreviewChromaColor(showconf.PreviewChromaColor);
 
         SetupDynamicUI();
     }
