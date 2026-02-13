@@ -15,8 +15,8 @@ public class TextureWriter : MonoBehaviour
     public DmxManager dmxManager;
     public TextureReader reader;
     public Texture2D texture;
-    public const int TextureWidth = 1920;
-    public const int TextureHeight = 1080;
+    public static int TextureWidth = 1920;
+    public static int TextureHeight = 1080;
     public SpoutSender spoutSender;
 
     private System.Diagnostics.Stopwatch timer = new System.Diagnostics.Stopwatch();
@@ -43,6 +43,14 @@ public class TextureWriter : MonoBehaviour
         pixels = new Color32[TextureWidth * TextureHeight];
     }
 
+    public void ChangeResolution(Resolution resolution)
+    {
+        texture.Reinitialize(resolution.width, resolution.height);
+        pixels = new Color32[resolution.width * resolution.height];
+        TextureWidth = resolution.width;
+        TextureHeight = resolution.height;
+    }
+
     // Update is called once per frame
     void Update()
     {
@@ -51,8 +59,10 @@ public class TextureWriter : MonoBehaviour
 
         Profiler.BeginSample("Texture Clear");
         //fill with transparent
-        var color = new Color32(0, 0, 0, 0);
-        Array.Fill(pixels, color);
+        //var color = new Color32(0, 0, 0, 0);
+        //Array.Fill(pixels, color);
+        //Should be equivlalent, default value of a color32 is still a color32 as 0,0,0,0
+        Array.Clear(pixels, 0, pixels.Length);
         Profiler.EndSample();
 
         Profiler.BeginSample("DMX Merge");
@@ -61,10 +71,11 @@ public class TextureWriter : MonoBehaviour
         {
             mergedDmxValues = reader.dmxData.ToList();
         }
-        else
+        else if (dmxManager.Universes().Length != 0)
         {
-            var universeCount = dmxManager.Universes().Length;
-
+            //we cant take count because un sent universes wont be in the dictionary
+            //extract the max value from the ushort array
+            var universeCount = dmxManager.Universes().Max();
 
             //merge all universes into one byte array
             for (ushort u = 0; u < universeCount; u++)

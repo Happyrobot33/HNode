@@ -13,7 +13,7 @@ using TMPro;
 
 public class TimeCodeExporter : IExporter
 {
-    public string midiDevice = "IAC Driver Bus 1"; //Default to no device selected
+    public string midiDevice = "loopMIDI Port"; //Default to no device selected
 
     private InputDevice midiInput;
     private UdpClient udpClient;
@@ -130,7 +130,7 @@ public class TimeCodeExporter : IExporter
         MidiConnectDevice(midiDevice);
 
         udpClient = new UdpClient();
-        udpClient.Connect(IPAddress.Any, port);
+        udpClient.Connect(IPAddress.Loopback, port);
     }
 
     private protected TMP_InputField midiDeviceField;
