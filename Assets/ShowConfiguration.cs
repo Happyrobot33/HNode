@@ -41,6 +41,8 @@ public class ShowConfiguration
     public int TargetFramerate { get; set; } = 60;
     [YamlMember(Description = "The background Chroma Key color to use on the F11 Preview pane, RGBA (0 - 255) Integer")]
     public Color32 PreviewChromaColor { get; set; } = new Color32(0, 255, 0, 0);
+    public Resolution OutputResolution { get; set; } = new Resolution(1920, 1080);
+    public Resolution InputResolution { get; set;} = new Resolution(1920, 1080);
 
     //initializer
     public ShowConfiguration()
