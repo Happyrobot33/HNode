@@ -83,10 +83,17 @@ namespace ArtNet
 
             byte status = 0b11110000;
 
+            //resolve the IP. if its 0.0.0.0, then just use localhost
+            byte[] ipBytes = ArtNetReceiver.Address.GetAddressBytes();
+            if (ArtNetReceiver.Address.Equals(IPAddress.Any))
+            {
+                ipBytes = IPAddress.Loopback.GetAddressBytes();
+            }
+
             //construct a response packet
             var responsePacket = new PollReplyPacket
             {
-                IpAddress = ArtNetReceiver.Address.GetAddressBytes(),
+                IpAddress = ipBytes,
                 Port = ArtNetReceiver.Port,
                 //OUR version number. Just report 69 because its funny
                 VersionInfo = 42069,
