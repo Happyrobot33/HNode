@@ -18,7 +18,7 @@ namespace ArtNet
         public Dictionary<ushort, IEnumerable<IDmxDevice>> DmxDevices { get; private set; }
 
         public ArtNetReceiver ArtNetReceiver;
-        private readonly Socket _socket = new(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
+        UdpClient udpClient = new UdpClient();
 
         public void Update()
         {
@@ -87,9 +87,9 @@ namespace ArtNet
             byte[] ipBytes = ArtNetReceiver.Address.GetAddressBytes();
             if (ArtNetReceiver.Address.Equals(IPAddress.Any))
             {
-                //ipBytes = IPAddress.Loopback.GetAddressBytes();
+                ipBytes = IPAddress.Loopback.GetAddressBytes();
                 //use the machines IP Address instead of loopback
-                ipBytes = Dns.GetHostEntry(Dns.GetHostName()).AddressList.FirstOrDefault(a => a.AddressFamily == AddressFamily.InterNetwork)?.GetAddressBytes() ?? new byte[4];
+                //ipBytes = Dns.GetHostEntry(Dns.GetHostName()).AddressList.FirstOrDefault(a => a.AddressFamily == AddressFamily.InterNetwork)?.GetAddressBytes() ?? new byte[4];
             }
 
             //construct a response packet
@@ -134,7 +134,12 @@ namespace ArtNet
             //send over udp directly back to the requesting endpoint
             //the port SHOULD change because polls actually do move with the port changing
             Debug.Log($"Responding to poll from: {receivedData.RemoteEp}");
-            _socket.SendTo(stream.ToArray(), receivedData.RemoteEp);
+            //_socket.SendTo(stream.ToArray(), receivedData.RemoteEp);
+            //_socket.SendTo(stream.ToArray(), new IPEndPoint(IPAddress.Broadcast, ArtNetReceiver.Port));
+            udpClient.Send(stream.ToArray(), (int)stream.Length,IPAddress.Broadcast.ToString(), ArtNetReceiver.Port);
+            //convert the endpoint to an IPEndPoint and send the response directly to it
+            IPEndPoint remoteEp = receivedData.RemoteEp as IPEndPoint;
+            udpClient.Send(stream.ToArray(), (int)stream.Length, remoteEp.Address.ToString(), remoteEp.Port);
         }
     }
 }
