@@ -7359,6 +7359,66 @@ PrefabInstance:
       propertyPath: m_Name
       value: ArtNet
       objectReference: {fileID: 0}
+    - target: {fileID: 2204995358144401484, guid: e82cf9e9307c20548bacccf3e2dc2504, type: 3}
+      propertyPath: ArtNetReceiver
+      value: 
+      objectReference: {fileID: 1946927779}
+    - target: {fileID: 2204995358144401486, guid: e82cf9e9307c20548bacccf3e2dc2504, type: 3}
+      propertyPath: _onReceivedDmxEvent.m_PersistentCalls.m_Calls.Array.size
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 2204995358144401486, guid: e82cf9e9307c20548bacccf3e2dc2504, type: 3}
+      propertyPath: _onReceivedPollEvent.m_PersistentCalls.m_Calls.Array.size
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 2204995358144401486, guid: e82cf9e9307c20548bacccf3e2dc2504, type: 3}
+      propertyPath: _onReceivedDmxEvent.m_PersistentCalls.m_Calls.Array.data[0].m_Mode
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2204995358144401486, guid: e82cf9e9307c20548bacccf3e2dc2504, type: 3}
+      propertyPath: _onReceivedDmxEvent.m_PersistentCalls.m_Calls.Array.data[1].m_Mode
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 2204995358144401486, guid: e82cf9e9307c20548bacccf3e2dc2504, type: 3}
+      propertyPath: _onReceivedPollEvent.m_PersistentCalls.m_Calls.Array.data[0].m_Mode
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2204995358144401486, guid: e82cf9e9307c20548bacccf3e2dc2504, type: 3}
+      propertyPath: _onReceivedDmxEvent.m_PersistentCalls.m_Calls.Array.data[1].m_Target
+      value: 
+      objectReference: {fileID: 134366298}
+    - target: {fileID: 2204995358144401486, guid: e82cf9e9307c20548bacccf3e2dc2504, type: 3}
+      propertyPath: _onReceivedPollEvent.m_PersistentCalls.m_Calls.Array.data[0].m_Target
+      value: 
+      objectReference: {fileID: 134366298}
+    - target: {fileID: 2204995358144401486, guid: e82cf9e9307c20548bacccf3e2dc2504, type: 3}
+      propertyPath: _onReceivedDmxEvent.m_PersistentCalls.m_Calls.Array.data[1].m_CallState
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 2204995358144401486, guid: e82cf9e9307c20548bacccf3e2dc2504, type: 3}
+      propertyPath: _onReceivedDmxEvent.m_PersistentCalls.m_Calls.Array.data[0].m_MethodName
+      value: ReceivedDmxPacket
+      objectReference: {fileID: 0}
+    - target: {fileID: 2204995358144401486, guid: e82cf9e9307c20548bacccf3e2dc2504, type: 3}
+      propertyPath: _onReceivedPollEvent.m_PersistentCalls.m_Calls.Array.data[0].m_CallState
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 2204995358144401486, guid: e82cf9e9307c20548bacccf3e2dc2504, type: 3}
+      propertyPath: _onReceivedPollEvent.m_PersistentCalls.m_Calls.Array.data[0].m_MethodName
+      value: ReceivedPollPacket
+      objectReference: {fileID: 0}
+    - target: {fileID: 2204995358144401486, guid: e82cf9e9307c20548bacccf3e2dc2504, type: 3}
+      propertyPath: _onReceivedDmxEvent.m_PersistentCalls.m_Calls.Array.data[1].m_TargetAssemblyTypeName
+      value: ArtNet.DmxManager, ArtNet
+      objectReference: {fileID: 0}
+    - target: {fileID: 2204995358144401486, guid: e82cf9e9307c20548bacccf3e2dc2504, type: 3}
+      propertyPath: _onReceivedPollEvent.m_PersistentCalls.m_Calls.Array.data[0].m_TargetAssemblyTypeName
+      value: ArtNet.DmxManager, ArtNet
+      objectReference: {fileID: 0}
+    - target: {fileID: 2204995358144401486, guid: e82cf9e9307c20548bacccf3e2dc2504, type: 3}
+      propertyPath: _onReceivedPollEvent.m_PersistentCalls.m_Calls.Array.data[0].m_Arguments.m_ObjectArgumentAssemblyTypeName
+      value: UnityEngine.Object, UnityEngine
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -7596,6 +7656,17 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1842672642}
   m_CullTransparentMesh: 1
+--- !u!114 &1946927779 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 2204995358144401486, guid: e82cf9e9307c20548bacccf3e2dc2504, type: 3}
+  m_PrefabInstance: {fileID: 1805663751}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a0dff173f61007e4ca57e8303fa9e17d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &1949854965
 GameObject:
   m_ObjectHideFlags: 0
