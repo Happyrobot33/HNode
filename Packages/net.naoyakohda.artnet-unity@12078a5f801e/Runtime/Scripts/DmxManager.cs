@@ -87,9 +87,9 @@ namespace ArtNet
             byte[] ipBytes = ArtNetReceiver.Address.GetAddressBytes();
             if (ArtNetReceiver.Address.Equals(IPAddress.Any))
             {
-                ipBytes = IPAddress.Loopback.GetAddressBytes();
+                //ipBytes = IPAddress.Loopback.GetAddressBytes();
                 //use the machines IP Address instead of loopback
-                //ipBytes = Dns.GetHostEntry(Dns.GetHostName()).AddressList.FirstOrDefault(a => a.AddressFamily == AddressFamily.InterNetwork)?.GetAddressBytes() ?? new byte[4];
+                ipBytes = Dns.GetHostEntry(Dns.GetHostName()).AddressList.FirstOrDefault(a => a.AddressFamily == AddressFamily.InterNetwork)?.GetAddressBytes() ?? new byte[4];
             }
 
             //construct a response packet
