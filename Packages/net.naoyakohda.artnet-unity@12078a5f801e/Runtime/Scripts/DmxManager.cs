@@ -98,7 +98,7 @@ namespace ArtNet
                 EstaCode = 0,
                 ShortName = "HNode",
                 LongName = "HNode by Happyrobot33",
-                NodeReport = "All systems functional (TODO: Add more here lol)",
+                NodeReport = "All systems functional",
                 NumPorts = ushort.MaxValue,
                 PortTypes = new byte[] { 0b0100101, 0b0100101, 0b0100101, 0b0100101 },
                 InputStatus = new byte[] { 0b100000,0b100000,0b100000,0b100000},
