@@ -26,6 +26,7 @@ public class Loader : MonoBehaviour
     public static TextureWriter textureWriter;
     public static TextureReader textureReader;
     public static ArtNetReceiver artNetReceiver;
+    public static DMXPreviewToggle previewToggle;
 
     public static ShowConfiguration showconf = new ShowConfiguration();
 
@@ -40,6 +41,7 @@ public class Loader : MonoBehaviour
         spoutReceiver = FindObjectOfType<SpoutReceiver>();
         spoutSender = FindObjectOfType<SpoutSender>();
         artNetReceiver = FindObjectOfType<ArtNetReceiver>();
+        previewToggle = FindAnyObjectByType<DMXPreviewToggle>();
         textureWriter = FindObjectOfType<TextureWriter>();
         textureReader = FindObjectOfType<TextureReader>();
 
@@ -267,6 +269,8 @@ public class Loader : MonoBehaviour
         artNetReceiver.ChangeIPAddress(showconf.ArtNetAddress);
 
         SetFramerate(showconf.TargetFramerate);
+
+        previewToggle.SetPreviewChromaColor(showconf.PreviewChromaColor);
 
         SetupDynamicUI();
     }
