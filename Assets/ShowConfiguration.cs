@@ -39,6 +39,8 @@ public class ShowConfiguration
     [YamlMember(Description = "The address to listen to for artnet information. Set this to 0.0.0.0 to automatically find artnet information across all network interfaces")]
     public SerializableIPAddress ArtNetAddress { get; set; } = IPAddress.Any;
     public int TargetFramerate { get; set; } = 60;
+    public Resolution OutputResolution { get; set; } = new Resolution(1920, 1080);
+    public Resolution InputResolution { get; set;} = new Resolution(1920, 1080);
 
     //initializer
     public ShowConfiguration()

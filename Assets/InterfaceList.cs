@@ -152,7 +152,7 @@ public class InterfaceList : MonoBehaviour
         });
     }
 
-    public void UpdateInterface<T>(List<IUserInterface<T>> possibleUserInterfaces) where T : class
+    public void UpdateInterface<T>(IEnumerable<IUserInterface<T>> possibleUserInterfaces) where T : class
     {
         //check types
         if (typeof(T) != @interface)

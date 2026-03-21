@@ -1,7 +1,11 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Net;
+using System.Net.Sockets;
 using ArtNet.Devices;
+using ArtNet.IO;
 using ArtNet.Packets;
 using UnityEngine;
 
@@ -12,6 +16,9 @@ namespace ArtNet
         private readonly Queue<ushort> _updatedUniverses = new();
         private Dictionary<ushort, byte[]> DmxDictionary { get; } = new();
         public Dictionary<ushort, IEnumerable<IDmxDevice>> DmxDevices { get; private set; }
+
+        public ArtNetReceiver ArtNetReceiver;
+        UdpClient udpClient = new UdpClient();
 
         public void Update()
         {
@@ -65,6 +72,74 @@ namespace ArtNet
                 if (_updatedUniverses.Contains(universe)) return;
                 _updatedUniverses.Enqueue(universe);
             }
+        }
+
+        public void ReceivedPollPacket(ReceivedData<PollPacket> receivedData)
+        {
+            var packet = receivedData.Packet;
+            //unclear what flags and priority are for
+            //Debug.Log(packet.Flags);
+            //Debug.Log(packet.Priority);
+
+            byte status = 0b11110000;
+
+            //resolve the IP. if its 0.0.0.0, then just use localhost
+            byte[] ipBytes = ArtNetReceiver.Address.GetAddressBytes();
+            if (ArtNetReceiver.Address.Equals(IPAddress.Any))
+            {
+                //ipBytes = IPAddress.Loopback.GetAddressBytes();
+                //use the machines IP Address instead of loopback
+                ipBytes = Dns.GetHostEntry(Dns.GetHostName()).AddressList.FirstOrDefault(a => a.AddressFamily == AddressFamily.InterNetwork)?.GetAddressBytes() ?? new byte[4];
+            }
+
+            //construct a response packet
+            var responsePacket = new PollReplyPacket
+            {
+                IpAddress = ipBytes,
+                Port = ArtNetReceiver.Port,
+                //OUR version number. Just report 69 because its funny
+                VersionInfo = 0x0000,
+                NetSwitch = 0,
+                SubSwitch = 0,
+                Oem = 0,
+                UbeaVersion = 0,
+                Status1 = status,
+                EstaCode = 0,
+                ShortName = "HNode",
+                LongName = "HNode by Happyrobot33",
+                NodeReport = "All systems functional",
+                NumPorts = ushort.MaxValue,
+                PortTypes = new byte[] { 0x45, 0x45, 0x45, 0x45 },
+                InputStatus = new byte[] { 0x0,0x0,0x0,0x0},
+                OutputStatus = new byte[] { 0x0,0x0,0x0,0x0},
+                InputSubSwitch = new byte[] { 0, 0, 0, 0 },
+                OutputSubSwitch = new byte[] { 0, 0, 0,0 },
+                SwVideo = 0,
+                SwMacro = 0,
+                SwRemote = 0,
+                Spares = new byte[3],
+                Style = 0,
+                MacAddress = new byte[6],
+                BindIpAddress = new byte[4],
+                BindIndex = 0,
+            };
+
+            //send this over the network to the current port and broadcast address
+            var stream = new MemoryStream();
+            var writer = new ArtNetWriter(stream);
+            writer.Write(responsePacket.ToByteArray());
+
+            writer.Flush();
+
+            //send over udp directly back to the requesting endpoint
+            //the port SHOULD change because polls actually do move with the port changing
+            Debug.Log($"Responding to poll from: {receivedData.RemoteEp}");
+            //_socket.SendTo(stream.ToArray(), receivedData.RemoteEp);
+            //_socket.SendTo(stream.ToArray(), new IPEndPoint(IPAddress.Broadcast, ArtNetReceiver.Port));
+            udpClient.Send(stream.ToArray(), (int)stream.Length,IPAddress.Broadcast.ToString(), ArtNetReceiver.Port);
+            //convert the endpoint to an IPEndPoint and send the response directly to it
+            IPEndPoint remoteEp = receivedData.RemoteEp as IPEndPoint;
+            udpClient.Send(stream.ToArray(), (int)stream.Length, remoteEp.Address.ToString(), remoteEp.Port);
         }
     }
 }

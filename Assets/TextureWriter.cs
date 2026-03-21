@@ -15,14 +15,15 @@ public class TextureWriter : MonoBehaviour
     public DmxManager dmxManager;
     public TextureReader reader;
     public Texture2D texture;
-    public const int TextureWidth = 1920;
-    public const int TextureHeight = 1080;
+    public static int TextureWidth = 1920;
+    public static int TextureHeight = 1080;
     public SpoutSender spoutSender;
 
     private System.Diagnostics.Stopwatch timer = new System.Diagnostics.Stopwatch();
     public TextMeshProUGUI frameTime;
     public Material mat;
     private Color32[] pixels;
+    private List<byte> mergedDmxValues = new List<byte>();
 
     void Start()
     {
@@ -43,6 +44,14 @@ public class TextureWriter : MonoBehaviour
         pixels = new Color32[TextureWidth * TextureHeight];
     }
 
+    public void ChangeResolution(Resolution resolution)
+    {
+        texture.Reinitialize(resolution.width, resolution.height);
+        pixels = new Color32[resolution.width * resolution.height];
+        TextureWidth = resolution.width;
+        TextureHeight = resolution.height;
+    }
+
     // Update is called once per frame
     void Update()
     {
@@ -51,24 +60,36 @@ public class TextureWriter : MonoBehaviour
 
         Profiler.BeginSample("Texture Clear");
         //fill with transparent
-        var color = new Color32(0, 0, 0, 0);
-        Array.Fill(pixels, color);
+        //var color = new Color32(0, 0, 0, 0);
+        //Array.Fill(pixels, color);
+        //Should be equivlalent, default value of a color32 is still a color32 as 0,0,0,0
+        Array.Clear(pixels, 0, pixels.Length);
         Profiler.EndSample();
 
         Profiler.BeginSample("DMX Merge");
-        List<byte> mergedDmxValues = new List<byte>();
+        //clear the merged dmx values list
+        mergedDmxValues.Clear();
         if (Loader.showconf.Transcode)
         {
             mergedDmxValues = reader.dmxData.ToList();
         }
-        else
+        else if (dmxManager.Universes().Length != 0)
         {
-            var universeCount = dmxManager.Universes().Length;
+            //we cant take count because un sent universes wont be in the dictionary
+            //extract the max value from the ushort array
+            var universeCount = dmxManager.Universes().Max() + 1;
 
+            //setup the uninitialized count in the list now so we dont have to keep resizing it as we add values
+            mergedDmxValues.Capacity = universeCount * 512;
 
             //merge all universes into one byte array
             for (ushort u = 0; u < universeCount; u++)
             {
+                //TODO:
+                //stupid optimization, but dmxManager.DmxValues returns a new 512 byte array if there isnt a universe there
+                //however, this causes GC, so instead just check if the universe exists and if it doesnt just skip doing this action altogether
+                //its a minor optim but is the last major KB level GC happening in our own code every frame
+
                 byte[] dmxValues = dmxManager.DmxValues(u);
                 mergedDmxValues.AddRange(dmxValues);
             }

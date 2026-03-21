@@ -57,10 +57,8 @@ public class BinaryStageFlight : IDMXSerializer
     public void SerializeChannel(ref Color32[] pixels, byte channelValue, int channel, int textureWidth, int textureHeight)
     {
         //split the value into 8 bits
-        var bits = new BitArray(new byte[] { channelValue });
-
         //sane endianness
-        for (int i = 0; i < bits.Length; i++)
+        for (int i = 0; i < 8; i++)
         {
             GetPositionData(channel, i, textureWidth, out int x, out int y);
             /* if (x >= textureWidth || y >= textureHeight)
@@ -69,7 +67,7 @@ public class BinaryStageFlight : IDMXSerializer
             } */
             //convert the x y to pixel index
             //return 4x4 area
-            byte val = (byte)(bits[i] ? 255 : 0);
+            byte val = (byte)(GetBitFromByte(channelValue, i) ? 255 : 0);
             var color = new Color32(
                 val,
                 val,
@@ -78,6 +76,11 @@ public class BinaryStageFlight : IDMXSerializer
             );
             TextureWriter.MakeColorBlock(ref pixels, x, y, color, blockSize);
         }
+    }
+
+    private bool GetBitFromByte(byte value, int bitIndex)
+    {
+        return (value & (1 << bitIndex)) != 0;
     }
 
     public void DeserializeChannel(Texture2D tex, ref byte channelValue, int channel, int textureWidth, int textureHeight)

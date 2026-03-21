@@ -5,8 +5,8 @@ using UnityEngine;
 //this should really be turned into a IDMXGenerator
 public class TextureReader : MonoBehaviour
 {
-    public const int TextureWidth = 1920;
-    public const int TextureHeight = 1080;
+    public static int TextureWidth = 1920;
+    public static int TextureHeight = 1080;
     public byte[] dmxData;
     public Loader Loader;
     public RenderTexture texture;
@@ -16,6 +16,13 @@ public class TextureReader : MonoBehaviour
     void Start()
     {
         texture2D = new Texture2D(TextureWidth, TextureHeight, TextureFormat.BGRA32, false);
+    }
+
+    public void ChangeResolution(Resolution resolution)
+    {
+        texture2D.Reinitialize(resolution.width, resolution.height);
+        TextureWidth = resolution.width;
+        TextureHeight = resolution.height;
     }
 
     void Update()

@@ -26,6 +26,8 @@ public class Loader : MonoBehaviour
     private static List<InterfaceList> interfaceLists;
     public static SpoutReceiver spoutReceiver;
     public static SpoutSender spoutSender;
+    public static TextureWriter textureWriter;
+    public static TextureReader textureReader;
     public static ArtNetReceiver artNetReceiver;
 
     public static ShowConfiguration showconf = new ShowConfiguration();
@@ -142,9 +144,14 @@ public class Loader : MonoBehaviour
     void Start()
     {
         sessionStartUtc = DateTime.UtcNow;
+
+        //TODO: Make this configurable. This is here because even though its not resizable, unity can get in a fucked state and remember the wrong resolution
+        Screen.SetResolution(1200, 600, false);
         spoutReceiver = FindObjectOfType<SpoutReceiver>();
         spoutSender = FindObjectOfType<SpoutSender>();
         artNetReceiver = FindObjectOfType<ArtNetReceiver>();
+        textureWriter = FindObjectOfType<TextureWriter>();
+        textureReader = FindObjectOfType<TextureReader>();
 
         //load in all the serializers
         serializers = GetAllInterfaceImplementations<IDMXSerializer>();
@@ -200,8 +207,8 @@ public class Loader : MonoBehaviour
     {
         foreach (var interfaceList in interfaceLists)
         {
-            interfaceList.UpdateInterface(showconf.Generators.OfType<IUserInterface<IDMXGenerator>>().ToList());
-            interfaceList.UpdateInterface(showconf.Exporters.OfType<IUserInterface<IExporter>>().ToList());
+            interfaceList.UpdateInterface(showconf.Generators.OfType<IUserInterface<IDMXGenerator>>());
+            interfaceList.UpdateInterface(showconf.Exporters.OfType<IUserInterface<IExporter>>());
         }
         var sig = ExportersSignature();
         if (presenceNeedsRefresh)
@@ -388,6 +395,14 @@ public class Loader : MonoBehaviour
         spoutSender.spoutName = showconf.SpoutOutputName;
         spoutReceiver.sourceName = showconf.SpoutInputName;
 
+        //get the input render texture from the spout receiver
+        var inputTexture = spoutReceiver.targetTexture;
+
+        //modify the render texture size
+        UpdateRenderTextureSize(inputTexture, showconf.InputResolution);
+        textureWriter.ChangeResolution(showconf.OutputResolution);
+        textureReader.ChangeResolution(showconf.InputResolution);
+
         artNetReceiver.ChangePort(showconf.ArtNetPort);
         artNetReceiver.ChangeIPAddress(showconf.ArtNetAddress);
         var spout = string.IsNullOrWhiteSpace(showconf.SpoutInputName) ? "No Spout input" : $"Spout: {showconf.SpoutInputName}";
@@ -397,6 +412,17 @@ public class Loader : MonoBehaviour
         SetFramerate(showconf.TargetFramerate);
 
         SetupDynamicUI();
+    }
+
+    private static void UpdateRenderTextureSize(RenderTexture rt, Resolution resolution)
+    {
+        if (rt.width != resolution.width || rt.height != resolution.height)
+        {
+            rt.Release();
+            rt.width = resolution.width;
+            rt.height = resolution.height;
+            rt.Create();
+        }
     }
 
     //TODO: Should probably be moved to UIController but eh
