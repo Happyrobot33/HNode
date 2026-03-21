@@ -12,6 +12,9 @@ using UnityEngine.UI;
 using YamlDotNet.Serialization;
 using YamlDotNet.Serialization.NamingConventions;
 using static TextureWriter;
+using DiscordRPC;
+using DiscordRPC.Logging;
+using UTime = UnityEngine.Time; // idk??
 
 public class Loader : MonoBehaviour
 {
@@ -33,8 +36,115 @@ public class Loader : MonoBehaviour
     ISerializer ymlserializer;
     public UIController uiController;
 
+    [Header("Discord RPC")]
+    [SerializeField] private string applicationId = "1463611148346589247";
+
+    private static DiscordRpcClient client;
+    private static bool ready;
+    private static DateTime sessionStartUtc;
+    private static string lastPresenceKey;
+    private static float nextPresenceAllowedTime = 0f;
+    private static bool presenceNeedsRefresh;
+    private string lastExportersSig;
+
+    // mmm mmm
+    public void SetPresence(string deets, string state, string largeImage, string largeImageText = null, string smallImageKey = null, string smallImageText = null)
+    {
+        if (client == null || !ready) return;
+        var presence = new RichPresence
+        {
+            Details = deets,
+            State = state,
+            Assets = new Assets
+            {
+                LargeImageKey = largeImage,
+                LargeImageText = largeImageText,
+                SmallImageKey = smallImageKey,
+                SmallImageText = smallImageText
+            },
+            Timestamps = new Timestamps { Start = sessionStartUtc }
+        };
+        client.SetPresence(presence);
+    }
+    private static void PushPresence( // kill me later or smth
+    string details,
+    string state,
+    string largeImage,
+    string largeText = null,
+    string smallImage = null,
+    string smallText = null,
+    bool force = false)
+    {
+        if (client == null || !ready) return;
+        if (!force && UTime.realtimeSinceStartup < nextPresenceAllowedTime) return;
+        var key = $"{details}|{state}|{largeImage}|{largeText}|{smallImage}|{smallText}";
+        if (!force && key == lastPresenceKey) return;
+
+        nextPresenceAllowedTime = UTime.realtimeSinceStartup + 1.0f;
+        lastPresenceKey = key;
+
+        var presence = new RichPresence
+        {
+            Details = details,
+            State = state,
+            Assets = new Assets
+            {
+                LargeImageKey = largeImage,
+                LargeImageText = largeText,
+                SmallImageKey = smallImage,
+                SmallImageText = smallText
+            },
+            Timestamps = new Timestamps { Start = sessionStartUtc }
+        };
+
+        client.SetPresence(presence);
+    }
+    private static string BuildStateLine() // yes yes i know making this a static method is stupid i am aware
+    {
+        var serializer = showconf?.Serializer != null ? showconf.Serializer.GetType().Name : "None";
+        var uni = showconf != null ? showconf.TranscodeUniverseCount : 0;
+        var genCount = showconf?.Generators?.Count ?? 0;
+        var expCount = showconf?.Exporters?.Count ?? 0;
+        return $"{serializer}";
+    }
+    private static string ExportersSignature()
+    {
+        if (showconf?.Exporters == null) return "";
+        return string.Join("|", showconf.Exporters.Select(e => e?.GetType().FullName ?? "null"));
+    }
+
+
+    private void OnApplicationQuit()
+    {
+        Shutdown();
+    }
+
+    private void OnDestroy()
+    {
+        Shutdown();
+    }
+
+    private void Shutdown()
+    {
+        if (client == null) return;
+
+        try
+        {
+            client.ClearPresence();
+            client.Dispose();
+        }
+        catch { /* uhhh idk?? */ }
+        finally
+        {
+            client = null;
+            ready = false;
+        }
+    }
+
     void Start()
     {
+        sessionStartUtc = DateTime.UtcNow;
+
         //TODO: Make this configurable. This is here because even though its not resizable, unity can get in a fucked state and remember the wrong resolution
         Screen.SetResolution(1200, 600, false);
         spoutReceiver = FindObjectOfType<SpoutReceiver>();
@@ -77,6 +187,19 @@ public class Loader : MonoBehaviour
         ymlserializer = SetupBuilder<SerializerBuilder>().Build();
         ymldeserializer = SetupBuilder<DeserializerBuilder>().Build();
 
+        client = new DiscordRpcClient("1463611148346589247")
+        {
+            Logger = new ConsoleLogger() { Level = LogLevel.Warning }
+        };
+        client.OnReady += async (sender, e) =>
+        {
+            ready = true;
+            SetPresence("Show Configuration Loaded", "Ready", "hnode");
+            Debug.Log("Discord RPC Ready");
+            await System.Threading.Tasks.Task.Delay(2000);
+            presenceNeedsRefresh = true;
+        };
+        client.Initialize();
         SetupDynamicUI();
     }
 
@@ -87,6 +210,20 @@ public class Loader : MonoBehaviour
             interfaceList.UpdateInterface(showconf.Generators.OfType<IUserInterface<IDMXGenerator>>());
             interfaceList.UpdateInterface(showconf.Exporters.OfType<IUserInterface<IExporter>>());
         }
+        var sig = ExportersSignature();
+        if (presenceNeedsRefresh)
+        {
+            presenceNeedsRefresh = false;
+            PushPresence("Editing show", BuildStateLine(), "hnode", "HNode", force: true);
+        }
+        if (sig != lastExportersSig)
+        {
+            lastExportersSig = sig;
+            var hasMidi = showconf?.Exporters?.Any(e => e.GetType().Name == "MIDIDMX") ?? false;
+            var outputMIDI = hasMidi ? " • Sending Through MIDIDMX" : "";
+            PushPresence("Editing show", BuildStateLine() + outputMIDI, "hnode", "Furality Grid Node", force: true);
+        }
+        client?.Invoke();
     }
 
     private T SetupBuilder<T>() where T : BuilderSkeleton<T>, new()
@@ -166,6 +303,7 @@ public class Loader : MonoBehaviour
 
     public void LoadShowConfiguration()
     {
+        presenceNeedsRefresh = true;
         //open a file dialog
         var extensions = new[] {
             new ExtensionFilter("Show Configurations", "shwcfg"),
@@ -190,6 +328,7 @@ public class Loader : MonoBehaviour
         UnloadShowConf();
 
         showconf = ymldeserializer.Deserialize<ShowConfiguration>(content);
+        PushPresence("Loading show", "Parsing configuration…", "hnode", "HNode", force: true);
 
         //invalidate the dropdowns and toggles
         uiController.InvalidateUIState();
@@ -197,6 +336,7 @@ public class Loader : MonoBehaviour
         //start coroutine
         //this is stupid dumb shit but this YML library is being weird and this fixes the issue
         StartCoroutine(DeferredLoad(content));
+        PushPresence("Show loaded", BuildStateLine(), "hnode", "HNode", force: true);
     }
 
     public static void UnloadShowConf()
@@ -265,6 +405,9 @@ public class Loader : MonoBehaviour
 
         artNetReceiver.ChangePort(showconf.ArtNetPort);
         artNetReceiver.ChangeIPAddress(showconf.ArtNetAddress);
+        var spout = string.IsNullOrWhiteSpace(showconf.SpoutInputName) ? "No Spout input" : $"Spout: {showconf.SpoutInputName}";
+        var artnet = $"ArtNet: {showconf.ArtNetPort}";
+        PushPresence("Sending DMX", $"{BuildStateLine()} • {spout}", "hnode", "HNode", smallImage: "artnet", smallText: artnet);
 
         SetFramerate(showconf.TargetFramerate);
 
