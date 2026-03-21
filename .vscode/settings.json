@@ -66,5 +66,5 @@
     "explorer.fileNesting.patterns": {
         "*.sln": "*.csproj"
     },
-    "dotnet.defaultSolution": "HNode-DiscordRPC.slnx"
+    "dotnet.defaultSolution": "HNode.slnx"
 }
