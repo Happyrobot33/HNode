@@ -2,7 +2,6 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
 using System.Text.RegularExpressions;
 using ArtNet;
 using Klak.Spout;
@@ -35,12 +34,10 @@ public class Loader : MonoBehaviour
     ISerializer ymlserializer;
     public UIController uiController;
 
-    private const string CONFIG_REGEX = "-{1,2}[Cc]onfig-";
     private const string CONFIG_FILE_REGEX = "-{1,2}[Cc]onfig-[Ff]ile=";
 
     void Start()
     {
-        ReadCLIConfig(ref showconf);
 
         //TODO: Make this configurable. This is here because even though its not resizable, unity can get in a fucked state and remember the wrong resolution
         Screen.SetResolution(1200, 600, false);
@@ -190,7 +187,7 @@ public class Loader : MonoBehaviour
         LoadShowConfigurationFile(paths[0]);
     }
 
-    public void LoadShowConfigurationFile(string path, bool forceFlags = false)
+    public void LoadShowConfigurationFile(string path)
     {
         if (!System.IO.File.Exists(path))
         {
@@ -214,14 +211,9 @@ public class Loader : MonoBehaviour
         //invalidate the dropdowns and toggles
         uiController.InvalidateUIState();
 
-        Action preCallback = null;
-
-        if (forceFlags)
-            preCallback = () => ReadCLIConfig(ref showconf);
-
         //start coroutine
         //this is stupid dumb shit but this YML library is being weird and this fixes the issue
-        StartCoroutine(DeferredLoad(content, preCallback));
+        StartCoroutine(DeferredLoad(content));
     }
 
     public void ReadCLIConfigFile()
@@ -233,42 +225,7 @@ public class Loader : MonoBehaviour
         if (configFilePath != null)
         {
             Debug.Log($"Config file path is: {cliConfigFileRegex.Replace(configFilePath, "")}");
-            LoadShowConfigurationFile(cliConfigFileRegex.Replace(configFilePath, ""), true);
-        }
-    }
-
-    public void ReadCLIConfig(ref ShowConfiguration showconf)
-    {
-        Regex cliConfigRegex = new Regex(CONFIG_REGEX);
-        string[] launchArgs = Array.FindAll(Environment.GetCommandLineArgs(), cliConfigRegex.IsMatch);
-
-        foreach (string argument in launchArgs)
-        {
-            string[] configOption = cliConfigRegex.Replace(argument, "").Split("=");
-
-            if (configOption.Length != 2)
-                continue;
-
-            if (configOption[0].ToLower() == "file")
-                continue;
-
-            PropertyInfo[] availableConfigOptions = showconf.GetType().GetProperties();
-            PropertyInfo selectedConfigOption = availableConfigOptions.FirstOrDefault((availableOption) => availableOption.Name.ToLower() == configOption[0].ToLower());
-
-            if (selectedConfigOption == null)
-            {
-                Debug.LogWarning($"Unkown configuration option: {configOption[0]}");
-                continue;
-            }
-
-            try
-            {
-                selectedConfigOption.SetValue(showconf, Convert.ChangeType(configOption[1], selectedConfigOption.PropertyType));
-                Debug.Log($"Has configuration override flag: \"{selectedConfigOption.Name}\" as type \"{selectedConfigOption.PropertyType}\" set to ({configOption[1]})");
-            } catch (Exception e)
-            {
-                Debug.LogError($"Cannot parse flag \"{argument}\" as type \"{selectedConfigOption.PropertyType}\"");
-            }
+            LoadShowConfigurationFile(cliConfigFileRegex.Replace(configFilePath, ""));
         }
     }
 
