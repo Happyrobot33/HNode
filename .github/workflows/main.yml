@@ -48,18 +48,6 @@ jobs:
 #          githubToken: ${{ secrets.GITHUB_TOKEN }}
 
       # Build
-      - name: Build Windows project
-        uses: game-ci/unity-builder@v4.6.3
-        env:
-          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
-          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
-          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
-        with:
-          allowDirtyBuild: true
-          targetPlatform: StandaloneWindows64
-          buildName: HNode
-          buildsPath: Builds
-
       - name: Build Linux project
         uses: game-ci/unity-builder@v4.6.3
         env:
@@ -72,18 +60,33 @@ jobs:
           buildName: HNode
           buildsPath: Builds
 
+      - name: Upload Linux Portable Build
+        uses: actions/upload-artifact@v4
+        with:
+          name: Linux Portable Build
+          path: Builds/StandaloneLinux64
+
+      - name: Delete Linux build to free space
+        run: rm -rf Builds/StandaloneLinux64
+
+      - name: Build Windows project
+        uses: game-ci/unity-builder@v4.6.3
+        env:
+          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
+          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+        with:
+          allowDirtyBuild: true
+          targetPlatform: StandaloneWindows64
+          buildName: HNode
+          buildsPath: Builds
+
       # Output
       - name: Upload Windows Portable Build
         uses: actions/upload-artifact@v4
         with:
           name: Windows Portable Build
           path: Builds/StandaloneWindows64
-
-      - name: Upload Linux Portable Build
-        uses: actions/upload-artifact@v4
-        with:
-          name: Linux Portable Build
-          path: Builds/StandaloneLinux64
       
       # Get nsis
       - name: Install NSIS
