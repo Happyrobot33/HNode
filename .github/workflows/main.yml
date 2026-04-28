@@ -3,8 +3,63 @@ name: Unity CI
 on: [push, pull_request, workflow_dispatch]
 
 jobs:
-  build:
-    name: Build
+  build-linux:
+    name: Build Linux
+    runs-on: ubuntu-latest
+    steps:
+      - name: Delete huge unnecessary tools folder
+        run: rm -rf /opt/hostedtoolcache
+
+      # Checkout (without LFS)
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      # Git LFS
+      - name: Create LFS file list
+        run: git lfs ls-files -l | cut -d' ' -f1 | sort > .lfs-assets-id
+
+      - name: Restore LFS cache
+        uses: actions/cache@v3
+        id: lfs-cache
+        with:
+          path: .git/lfs
+          key: ${{ runner.os }}-lfs-${{ hashFiles('.lfs-assets-id') }}
+
+      - name: Git LFS Pull
+        run: |
+          git lfs pull
+          git add .
+          git reset --hard
+
+      # Cache
+      - uses: actions/cache@v3
+        with:
+          path: Library
+          key: Library-${{ hashFiles('Assets/**', 'Packages/**', 'ProjectSettings/**') }}
+          restore-keys: |
+            Library-
+
+      # Build
+      - name: Build Linux project
+        uses: game-ci/unity-builder@v4.6.3
+        env:
+          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
+          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+        with:
+          allowDirtyBuild: true
+          targetPlatform: StandaloneLinux64
+          buildName: HNode
+          buildsPath: Builds
+
+      - name: Upload Linux Portable Build
+        uses: actions/upload-artifact@v4
+        with:
+          name: Linux Portable Build
+          path: Builds/StandaloneLinux64
+
+  build-windows:
+    name: Build Windows
     runs-on: ubuntu-latest
     steps:
       - name: Delete huge unnecessary tools folder
@@ -48,27 +103,6 @@ jobs:
 #          githubToken: ${{ secrets.GITHUB_TOKEN }}
 
       # Build
-      - name: Build Linux project
-        uses: game-ci/unity-builder@v4.6.3
-        env:
-          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
-          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
-          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
-        with:
-          allowDirtyBuild: true
-          targetPlatform: StandaloneLinux64
-          buildName: HNode
-          buildsPath: Builds
-
-      - name: Upload Linux Portable Build
-        uses: actions/upload-artifact@v4
-        with:
-          name: Linux Portable Build
-          path: Builds/StandaloneLinux64
-
-      - name: Delete Linux build to free space
-        run: sudo rm -rf Builds/StandaloneLinux64
-
       - name: Build Windows project
         uses: game-ci/unity-builder@v4.6.3
         env:
