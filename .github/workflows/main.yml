@@ -67,7 +67,7 @@ jobs:
           path: Builds/StandaloneLinux64
 
       - name: Delete Linux build to free space
-        run: rm -rf Builds/StandaloneLinux64
+        run: sudo rm -rf Builds/StandaloneLinux64
 
       - name: Build Windows project
         uses: game-ci/unity-builder@v4.6.3
