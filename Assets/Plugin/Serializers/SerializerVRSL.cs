@@ -13,7 +13,7 @@ public class VRSL : IDMXSerializer
         VerticalRight,
         HorizontalBottom,
     }
-    const int blockSize = 16; // 10x10 pixels per channel block
+    const int blockSize = 16; // 16x16 pixels per channel block
     const int blocksPerCol = 13; // channels per column
     public bool GammaCorrection = true;
     public bool RGBGridMode = false;
@@ -25,40 +25,7 @@ public class VRSL : IDMXSerializer
 
     public void SerializeChannel(ref Color32[] pixels, byte channelValue, int channel, int textureWidth, int textureHeight)
     {
-        GetPositionData(channel, out int x, out int y, out int universeOffset);
-
-        //if vertical, flip
-        switch (outputConfig)
-        {
-            case OutputConfigs.HorizontalTop:
-                x += universeOffset;
-                break;
-            case OutputConfigs.HorizontalBottom:
-                x += universeOffset;
-                y += textureHeight - (blocksPerCol * blockSize); // Shift down for horizontal bottom layout
-                break;
-            case OutputConfigs.VerticalLeft:
-                //swap x and y
-                int temp = x;
-                x = y;
-                y = temp;
-                y += universeOffset;
-                //flip Y coordinate
-                y = textureHeight - y - blockSize; // Flip Y coordinate for vertical layout
-                break;
-            case OutputConfigs.VerticalRight:
-                //swap x and y
-                temp = x;
-                x = y;
-                y = temp;
-                y += universeOffset;
-                //flip Y coordinate
-                y = textureHeight - y - blockSize; // Flip Y coordinate for vertical layout
-                x += textureWidth - (blocksPerCol * blockSize); // Shift to the right for vertical right layout
-                break;
-            default:
-                throw new ArgumentOutOfRangeException(nameof(outputConfig), outputConfig, null);
-        }
+        GetPositionData(channel, out int x, out int y, textureWidth, textureHeight);
 
 
         //convert the x y to pixel index
@@ -72,7 +39,7 @@ public class VRSL : IDMXSerializer
         if (GammaCorrection) { color = color.linear; } //lol WTF VRSL, you output in a converted color space instead of native linear???????
         if (RGBGridMode)
         {
-            byte value = 0;
+            byte value;
             TextureWriter.ColorChannel cchannel;
             switch (GetUniverseWrap(channel))
             {
@@ -101,14 +68,16 @@ public class VRSL : IDMXSerializer
 
     public void DeserializeChannel(Texture2D tex, ref byte channelValue, int channel, int textureWidth, int textureHeight)
     {
-        GetPositionData(channel, out int x, out int y, out int universeOffset);
+        GetPositionData(channel, out int x, out int y, textureWidth, textureHeight);
+
+        if (y < -(blockSize / 2)) return; // Used when in vertical mode, to make sure we don't deserialize from the bottom again, when data is out of bounds
 
         //add a half offset to get the center
         x += blockSize / 2;
         y += blockSize / 2;
 
         // Get the color block from the texture
-        Color color = TextureReader.GetColor(tex, x + universeOffset, y);
+        Color color = TextureReader.GetColor(tex, x, y);
         if (GammaCorrection) { color = color.gamma; } //TODO: test this NEEDS MORE TESTING, seems like this actually should be off by default?????
 
         // Convert the color block to a channel value
@@ -135,10 +104,10 @@ public class VRSL : IDMXSerializer
         }
     }
 
-    private void GetPositionData(int channel, out int x, out int y, out int universeOffset)
+    private void GetPositionData(int channel, out int x, out int y, int textureWidth, int textureHeight)
     {
-        int universe = channel / 512; // Assuming 512 channels per universe
         int channelInUniverse = channel % 512; // Channel within the universe
+        int universe = (channel - channelInUniverse) / 512; // Assuming 512 channels per universe
 
         //if rgb grid, make every 3 universes appear as the first 3
         if (RGBGridMode)
@@ -146,11 +115,37 @@ public class VRSL : IDMXSerializer
             universe = universe % 3; // Limit to 3 channels for RGB grid
         }
 
-        x = (channelInUniverse / blocksPerCol) * blockSize;
-        y = (channelInUniverse % blocksPerCol) * blockSize;
-
         //stupid universe bullshit in VRSL
-        universeOffset = universe * (512 / blocksPerCol * blockSize) + (universe * blockSize);
+        int universeOffset = universe * ((512 / blocksPerCol * blockSize) + blockSize);
+
+        int tempY = (channelInUniverse % blocksPerCol) * blockSize;
+        int tempX = ((channelInUniverse / blocksPerCol) * blockSize) + universeOffset;
+
+        // Swap X and Y when vertical mode
+        bool isVertical = outputConfig == OutputConfigs.VerticalLeft || outputConfig == OutputConfigs.VerticalRight;
+        x = isVertical ? tempY : tempX;
+        y = isVertical ? tempX : tempY;
+
+        //if vertical, flip
+        switch (outputConfig)
+        {
+            case OutputConfigs.HorizontalTop:
+                break;
+            case OutputConfigs.HorizontalBottom:
+                y += textureHeight - (blocksPerCol * blockSize); // Shift down for horizontal bottom layout
+                break;
+            case OutputConfigs.VerticalLeft:
+                //flip Y coordinate
+                y = textureHeight - y - blockSize; // Flip Y coordinate for vertical layout
+                break;
+            case OutputConfigs.VerticalRight:
+                //flip Y coordinate
+                y = textureHeight - y - blockSize; // Flip Y coordinate for vertical layout
+                x += textureWidth - (blocksPerCol * blockSize); // Shift to the right for vertical right layout
+                break;
+            default:
+                throw new ArgumentOutOfRangeException(nameof(outputConfig), outputConfig, null);
+        }
     }
     
     /// <summary>
