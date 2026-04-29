@@ -12,14 +12,14 @@ jobs:
 
       # Checkout (without LFS)
       - name: Checkout repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v6
 
       # Git LFS
       - name: Create LFS file list
         run: git lfs ls-files -l | cut -d' ' -f1 | sort > .lfs-assets-id
 
       - name: Restore LFS cache
-        uses: actions/cache@v3
+        uses: actions/cache@v5
         id: lfs-cache
         with:
           path: .git/lfs
@@ -32,7 +32,7 @@ jobs:
           git reset --hard
 
       # Cache
-      - uses: actions/cache@v3
+      - uses: actions/cache@v5
         with:
           path: Library
           key: Library-${{ hashFiles('Assets/**', 'Packages/**', 'ProjectSettings/**') }}
@@ -41,7 +41,7 @@ jobs:
 
       # Build
       - name: Build Linux project
-        uses: game-ci/unity-builder@v4.6.3
+        uses: game-ci/unity-builder@v4.8.1
         env:
           UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
           UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
@@ -53,7 +53,7 @@ jobs:
           buildsPath: Builds
 
       - name: Upload Linux Portable Build
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: Linux Portable Build
           path: Builds/StandaloneLinux64
@@ -67,14 +67,14 @@ jobs:
         
       # Checkout (without LFS)
       - name: Checkout repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v6
 
       # Git LFS
       - name: Create LFS file list
         run: git lfs ls-files -l | cut -d' ' -f1 | sort > .lfs-assets-id
 
       - name: Restore LFS cache
-        uses: actions/cache@v3
+        uses: actions/cache@v5
         id: lfs-cache
         with:
           path: .git/lfs
@@ -87,7 +87,7 @@ jobs:
           git reset --hard
 
       # Cache
-      - uses: actions/cache@v3
+      - uses: actions/cache@v5
         with:
           path: Library
           key: Library-${{ hashFiles('Assets/**', 'Packages/**', 'ProjectSettings/**') }}
@@ -104,7 +104,7 @@ jobs:
 
       # Build
       - name: Build Windows project
-        uses: game-ci/unity-builder@v4.6.3
+        uses: game-ci/unity-builder@v4.8.1
         env:
           UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
           UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
@@ -117,7 +117,7 @@ jobs:
 
       # Output
       - name: Upload Windows Portable Build
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: Windows Portable Build
           path: Builds/StandaloneWindows64
@@ -130,13 +130,13 @@ jobs:
 
       # run NSIS installer script for windows builds
       - name: NSIS Installer
-        uses: joncloud/makensis-action@v4.1
+        uses: joncloud/makensis-action@v5.0
         with:
           script-file: .github/scripts/installer.nsi
       
       # Upload installer
       - name: Upload Windows Installer
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: Windows Installer
           path: .github/scripts/HNode setup.exe
