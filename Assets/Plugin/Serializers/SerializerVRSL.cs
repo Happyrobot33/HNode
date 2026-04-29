@@ -13,7 +13,7 @@ public class VRSL : IDMXSerializer
         VerticalRight,
         HorizontalBottom,
     }
-    const int blockSize = 16; // 10x10 pixels per channel block
+    const int blockSize = 16; // 16x16 pixels per channel block
     const int blocksPerCol = 13; // channels per column
     public bool GammaCorrection = true;
     public bool RGBGridMode = false;
@@ -72,7 +72,7 @@ public class VRSL : IDMXSerializer
         if (GammaCorrection) { color = color.linear; } //lol WTF VRSL, you output in a converted color space instead of native linear???????
         if (RGBGridMode)
         {
-            byte value = 0;
+            byte value;
             TextureWriter.ColorChannel cchannel;
             switch (GetUniverseWrap(channel))
             {
