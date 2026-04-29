@@ -15,7 +15,7 @@ public class ShowConfiguration
     [YamlMember(Description = "Whether to enable transcoding from the deserializer to the serializer. This is useful for converting between different pixel mapping formats.")]
     public bool Transcode { get; set; }
     [YamlMember(Description = "The number of universes to do transcoding for. This is useful for limiting the amount of data being processed if you know you only need a certain number of universes.")]
-    public int TranscodeUniverseCount { get; set; } = 3;
+    public int TranscodeUniverseCount { get; set; } = 9;
     [YamlMember(Description = "The maximum number of universes that will be serialized. This usually doesnt need to be changed")]
     public int SerializeUniverseCount { get; set; } = int.MaxValue; //this is the maximum number of universes that can be used for serializing.
     [YamlMember(Description = "A list of channels to mask out. These channels will be forced to transparent. Define a start and end channel for each mask.")]

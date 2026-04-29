@@ -63,7 +63,7 @@ public class Loader : MonoBehaviour
         showconf.Serializer = new VRSL();
         showconf.Deserializer = new VRSL();
         //showconf.Transcode = false;
-        showconf.TranscodeUniverseCount = 3;
+        showconf.TranscodeUniverseCount = 9;
         showconf.SerializeUniverseCount = int.MaxValue;
 
         //setup framerate
