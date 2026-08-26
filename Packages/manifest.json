@@ -26,6 +26,7 @@
     "com.unity.toolchain.linux-x86_64": "2.0.11",
     "com.unity.ugui": "2.0.0",
     "com.unity.visualscripting": "1.9.7",
+    "jp.keijiro.rtmidi": "2.2.0",
     "net.naoyakohda.artnet-unity": "https://github.com/nasshu2916/ArtNet-Unity.git?path=/Assets/ArtNet#master",
     "com.unity.modules.accessibility": "1.0.0",
     "com.unity.modules.ai": "1.0.0",
