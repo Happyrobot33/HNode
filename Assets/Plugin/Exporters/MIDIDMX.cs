@@ -386,8 +386,26 @@ public class MIDIDMX : IExporter
             logStream = null;
         }
 
-        string path = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
-        string[] logs = Directory.GetFiles(path + "\\..\\LocalLow\\VRChat\\VRChat", "output_log_*.txt", SearchOption.TopDirectoryOnly);
+#if UNITY_STANDALONE_WIN || UNITY_EDITOR_WIN
+
+        string localPath = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+        string localLowPath = localPath + "Low";
+
+#elif UNITY_STANDALONE_LINUX || UNITY_EDITOR_LINUX
+
+        string _userFolder = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+
+        string localPath = Path.Join(_userFolder, ".config"); // Assume XDG defaults
+        string localLowPath = Path.Join(_userFolder, ".local", "share"); // Assume XDG defaults
+
+#endif
+
+        // path + "\\..\\LocalLow\\VRChat\\VRChat"
+        string vrcFolder = Path.Join(localLowPath, "VRChat", "VRChat");
+        if (!Directory.Exists(vrcFolder))
+            return;
+        
+        string[] logs = Directory.GetFiles(vrcFolder, "output_log_*.txt", SearchOption.TopDirectoryOnly);
         if (logs.Length == 0) return;
 
         Array.Sort(logs);
@@ -396,8 +414,16 @@ public class MIDIDMX : IExporter
         //Editor!!
         if (useEditorLog)
         {
-            log = path + "\\..\\Local\\Unity\\Editor\\Editor.log";
+            // path + "\\..\\Local\\Unity\\Editor\\Editor.log"
+#if UNITY_STANDALONE_WIN || UNITY_EDITOR_WIN
+            log = Path.Join(Path.Join(localPath, "Unity", "Editor"), "Editor.log");
+#elif UNITY_STANDALONE_LINUX || UNITY_EDITOR_LINUX
+            log = Path.Join(Path.Join(localPath, "unity3d"), "Editor.log");
+#endif
         }
+
+        if (!File.Exists(log))
+            return;
 
         logStream = new FileStream(log, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
 
