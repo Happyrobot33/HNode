@@ -1,11 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
-using Melanchall.DryWetMidi.Common;
-using Melanchall.DryWetMidi.Composing;
-using Melanchall.DryWetMidi.Core;
-using Melanchall.DryWetMidi.Interaction;
-using Melanchall.DryWetMidi.Multimedia;
-using Melanchall.DryWetMidi.Standards;
+using RtMidi;
+using HNode.Util.Midi;
 using System;
 using System.Net.Sockets;
 using System.Net;
@@ -13,9 +9,13 @@ using TMPro;
 
 public class TimeCodeExporter : IExporter
 {
+#if UNITY_STANDALONE_WIN || UNITY_EDITOR_WIN
     public string midiDevice = "loopMIDI Port"; //Default to no device selected
+#elif UNITY_STANDALONE_LINUX || UNITY_EDITOR_LINUX
+    public string midiDevice = "Virtual RawMIDI"; //Default to Reaper on Linux
+#endif
 
-    private InputDevice midiInput;
+    private MidiIn midiInput;
     private List<UdpClient> udpClients = new List<UdpClient>();
     private int[] ports = new int[] { 7001, 7002, 7003, 7004, 7005 };
 
@@ -26,6 +26,7 @@ public class TimeCodeExporter : IExporter
         if (midiInput != null)
         {
             UnityEngine.Debug.Log("Dispose");
+            midiInput.ClosePort();
             midiInput.Dispose();
             midiInput = null;
             //force GC call
@@ -35,11 +36,27 @@ public class TimeCodeExporter : IExporter
         //commented out to let exceptions through
         try
         {
-            midiInput = InputDevice.GetByName(device);
-            midiInput.RaiseMidiTimeCodeReceived = true;
-            midiInput.MidiTimeCodeReceived += OnEventReceived;
-            midiInput.EventReceived += OnFullFrame;
-            midiInput.StartEventsListening();
+            midiInput = MidiIn.Create();
+            midiInput.OpenPort(MidiUtil.GetMidiPort(midiInput, device), "HNode");
+            midiInput.IgnoreTypes(false, false, false);
+
+            midiInput.MessageReceived = (someRandomDoubleIdontUnderstand, midiPacket) => {
+                MidiEvent midiEvent = MidiUtil.DeserializeMidi(midiPacket);
+
+                switch (midiEvent.midiCode)
+                {
+                    case MidiCode.TimeCodeQuarterFrame:
+                        OnTimeQuarterFrame(midiEvent);
+                        break;
+
+                    case MidiCode.SystemExclusive:
+                        OnFullFrame(midiPacket);
+                        break;
+                    
+                    default:
+                        break;
+                }
+            };
         }
         catch (Exception ex)
         {
@@ -51,62 +68,59 @@ public class TimeCodeExporter : IExporter
     //maybe concurrentdictionary with key as port I guess?
     private static TimeSpan timeCode = TimeSpan.Zero;
     private static byte frames = 0;
+    private static Dictionary<MidiTimeCodePiece, int> timeSegments = new();
 
-    private static void OnEventReceived(object sender, MidiTimeCodeReceivedEventArgs e)
+    // Inspired from: https://github.com/melanchall/drywetmidi/blob/46b2ac61b2f9c0efb9a6a43f0542d7a64bf7ef73/DryWetMidi/Multimedia/InputEndpoint/InputEndpoint.cs#L714
+    private void OnTimeQuarterFrame(MidiEvent midiEvent)
     {
-        //try to convert the sender to ourself
-        var exporter = sender as TimeCodeExporter;
+        MidiTimeCodePiece timeCodePiece = (MidiTimeCodePiece)(midiEvent.noteNumber >> 4);
 
-        var framerate = e.Format switch
+        timeSegments[timeCodePiece] = midiEvent.noteNumber & 0xF;
+
+        if (timeSegments.Count == 8)
         {
-            MidiTimeCodeType.Thirty => 30f,
-            MidiTimeCodeType.ThirtyDrop => 29.97f,
-            MidiTimeCodeType.TwentyFive => 25f,
-            MidiTimeCodeType.TwentyFour => 24f,
-            _ => 30f,//assume 30 I guess, this should never happen
-        };
-        //convert the timecode to a TimeSpan
-        timeCode = new TimeSpan(0, e.Hours, e.Minutes, e.Seconds);
-        frames = (byte)e.Frames;
+            int midiFrames = (timeSegments[MidiTimeCodePiece.FrameMostSignificant] << 4) | timeSegments[MidiTimeCodePiece.FrameLeastSignificant];
+            int midiSeconds = (timeSegments[MidiTimeCodePiece.SecondMostSignificant] << 4) | timeSegments[MidiTimeCodePiece.SecondLeastSignificant];
+            int midiMinutes = (timeSegments[MidiTimeCodePiece.MinuteMostSignificant] << 4) | timeSegments[MidiTimeCodePiece.MinuteLeastSignificant];
+            int midiHours = (timeSegments[MidiTimeCodePiece.RateHourMostSignificant] << 4) | timeSegments[MidiTimeCodePiece.HourLeastSignificant];
+
+            float framerate = (midiHours & 0x60) switch
+            {
+                0x00 => 24f,
+                0x20 => 25f,
+                0x40 => 29.97f,
+                0x60 => 30f,
+                _ => 30f, //assume 30 I guess, this should never happen
+            };
+
+            //convert the timecode to a TimeSpan
+            timeCode = new TimeSpan(0, midiHours & 0x1F, midiMinutes, midiSeconds);
+            frames = (byte)midiFrames;
+
+            timeSegments.Clear();
+        }
     }
 
-    private static void OnFullFrame(object? sender, MidiEventReceivedEventArgs e)
+    private void OnFullFrame(ReadOnlySpan<byte> midiPacket)
     {
-        //check type
-        if (e.Event.EventType != MidiEventType.NormalSysEx)
-        {
-            return;
-        }
-
-        var sysExEvent = e.Event as SysExEvent;
-        var data = sysExEvent.Data;
-
-        //convert the data to hex string
-        string hexString = BitConverter.ToString(data);
-        // Debug.Log(hexString);
-
-        //length should be 9
-        if (data.Length != 9)
-            return;
+        //length should be 10
+        if (midiPacket.Length != 10) return;
 
         //first two bytes should be 7F 7F
-        if (data[0] != 0x7F) return;
-        if (data[1] != 0x7F) return;
-        //third byte should be 01
-        if (data[2] != 0x01) return;
-        //fourth byte should be 01
-        if (data[3] != 0x01) return;
+        if (midiPacket[1] != 0x7F) return;
+        if (midiPacket[2] != 0x7F) return;
+        //third & fourth bytes should be 01 01
+        if (midiPacket[3] != 0x01) return;
+        if (midiPacket[4] != 0x01) return;
 
         //top 3 bits of hours contain framerate info
         //split out the hours byte
-        var hours = data[4] & 0x1F; // Mask out the top 3 bits
-        var minutes = data[5];
-        var seconds = data[6];
-        var framesData = data[7];
+        int midiHours = midiPacket[5] & 0x1F; // Mask out the top 3 bits
+        int midiMinutes = midiPacket[6] & 0x7F;
+        int midiSeconds = midiPacket[7] & 0x7F;
+        int midiFrames = midiPacket[8] & 0x7F;
 
-        // Debug.Log($"Full Frame Timecode Received: {hours}:{minutes}:{seconds}:{frames}");
-
-        float framerate = (hours & 0x60) switch
+        float framerate = (midiHours & 0x60) switch
         {
             0x00 => 24f,
             0x20 => 25f,
@@ -114,9 +128,10 @@ public class TimeCodeExporter : IExporter
             0x60 => 30f,
             _ => 30f,//assume 30 I guess, this should never happen
         };
+
         //convert the timecode to a TimeSpan
-        timeCode = new TimeSpan(0, hours, minutes, seconds);
-        frames = (byte)framesData;
+        timeCode = new TimeSpan(0, midiHours, midiMinutes, midiSeconds);
+        frames = (byte)midiFrames;
     }
 
     public void CompleteFrame(ref List<byte> channelValues)
@@ -134,7 +149,11 @@ public class TimeCodeExporter : IExporter
             UnityEngine.Debug.Log("Connecting to UDP port: " + port);
 
             var udpClient = new UdpClient();
-            udpClient.Connect(IPAddress.Loopback, port);
+
+            try {
+                udpClient.Connect(IPAddress.Loopback, port);
+            } catch {}
+
             udpClients.Add(udpClient);
         }
     }
@@ -156,6 +175,7 @@ public class TimeCodeExporter : IExporter
 
     public void Deconstruct()
     {
+        midiInput?.ClosePort();
         midiInput?.Dispose();
 
         foreach (var udpClient in udpClients)
@@ -218,7 +238,9 @@ public class TimeCodeExporter : IExporter
         //try to send
         foreach (var udpClient in udpClients)
         {
-            udpClient.Send(data.ToArray(), data.Count);
+            try {
+                udpClient.Send(data.ToArray(), data.Count);
+            } catch {}
         }
     }
 

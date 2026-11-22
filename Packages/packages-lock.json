@@ -292,6 +292,13 @@
         "com.unity.modules.screencapture": "1.0.0"
       }
     },
+    "jp.keijiro.rtmidi": {
+      "version": "2.2.0",
+      "depth": 0,
+      "source": "registry",
+      "dependencies": {},
+      "url": "https://registry.npmjs.com"
+    },
     "net.naoyakohda.artnet-unity": {
       "version": "file:net.naoyakohda.artnet-unity@12078a5f801e",
       "depth": 0,
