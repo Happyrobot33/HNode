@@ -152,7 +152,7 @@ public class MIDIDMX : IExporter
         {
             //Finds all channels that need data sent over
             midiUpdates = 0;
-            for (int i = midiCatchup; i < channelValues.Count; i++)
+            for (int i = midiCatchup; i < Math.Min(channelValues.Count, midiData.Length); i++)
             {
                 if ((channelValues[i] != midiData[i] || (i >= midiScanPosition && i < midiScanPosition + idleScanChannels)) && i < channelValues.Count)
                 {
@@ -213,6 +213,7 @@ public class MIDIDMX : IExporter
     {
         midiOutput?.Dispose();
         logStream?.Close();
+        logStream = null;
     }
 
     /// <summary>
